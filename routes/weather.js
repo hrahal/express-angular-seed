@@ -10,12 +10,16 @@ var config = require('config'),
     base = config.get('api.url');
 
 /* GET weather listing. */
+var trace = function (err) {
+    debug(err);
+    logger.err(err);
+};
 
 exports.today = function (req, res, next) {
     var params = req.query;
 
     if (!params.city) {
-        debug("missing city param");
+        trace("missing city param");
         res.send({
             err: "missing city param"
         });
@@ -30,26 +34,36 @@ exports.today = function (req, res, next) {
         }, function (err, response, body) {
 
             if (err) {
-                logger.error(err);
-                res.send(err);
-            } else if (response.statusCode !== 200) {
-                logger.error(err);
-                res.send(body);
-            } else {
-                var data = JSON.parse(body);
 
-                cityCount.update({
-                    city: params.city
-                }, {
-                    $inc: {
-                        count: 1
-                    }
-                }, {
-                    upsert : true
-                }, function (err, doc) {
+                trace(err);
+                res.send(err);
+
+            } else if (response.statusCode !== 200) {
+
+                trace(err);
+                res.send(body);
+
+            } else {
+
+                var data = JSON.parse(body),
+                    conditions = {
+                        city: params.city
+                    },
+                    update = {
+                        $inc: {
+                            count: 1
+                        }
+                    },
+                    options = {
+                        upsert : true
+                    };
+
+                cityCount.update(conditions, update, options, function (err, doc) {
+
                     if (err) {
-                        debug(err);
+                        trace(err);
                     }
+
                     debug(doc);
                     res.send({
                         success: true,
