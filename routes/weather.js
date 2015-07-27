@@ -1,6 +1,9 @@
 "use strict";
 
 var config = require('config'),
+    mongoose = require('mongoose'),
+    mode = require('../mongoDB/schema'),
+    cityCount = mongoose.model('cityCount'),
     request = require('request'),
     logger = require('winston'),
     debug = require('debug')('weather'),
@@ -13,7 +16,6 @@ exports.today = function (req, res, next) {
 
     if (!params.city) {
         debug("missing city param");
-        console.log("missing city param");
         res.send({
             err: "missing city param"
         });
@@ -36,9 +38,23 @@ exports.today = function (req, res, next) {
             } else {
                 var data = JSON.parse(body);
 
-                res.send({
-                    success: true,
-                    data: data
+                cityCount.update({
+                    city: params.city
+                }, {
+                    $inc: {
+                        count: 1
+                    }
+                }, {
+                    upsert : true
+                }, function (err, doc) {
+                    if (err) {
+                        debug(err);
+                    }
+                    debug(doc);
+                    res.send({
+                        success: true,
+                        data: data
+                    });
                 });
             }
         });
