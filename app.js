@@ -1,6 +1,7 @@
 "use strict";
 
 var express = require('express'),
+    fs = require('fs'),
     path = require('path'),
     favicon = require('serve-favicon'),
     cookieParser = require('cookie-parser'),
@@ -10,9 +11,17 @@ var express = require('express'),
     logdb = require('winston-mongodb').MongoDB,
     config = require('config'),
     db = config.get('mongodb.db'),
+    router = express.Router(),
     app = express();
 
 mongoose.connect(db);
+
+var models_path = __dirname + '/mongodb';
+fs.readdirSync(models_path).forEach(function (file) {
+    if (~file.indexOf('.js')) {
+        require(models_path + '/' + file);
+    }
+});
 
 //uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
@@ -20,10 +29,11 @@ mongoose.connect(db);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use('/api', express.static(path.join(__dirname, 'public')));
 
 /* routes*/
-require('./routes/routes')(app);
+require('./routes/routes')(router);
+app.use('/api', router);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

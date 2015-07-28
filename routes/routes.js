@@ -2,9 +2,10 @@
 
 var weather = require('./weather');
 
-module.exports = function (app) {
+module.exports = function (router) {
 
-    app.get('/weather', weather.today);
-    app.get('/count', weather.count);
+    //stick to rest api conventions
+    router.get('/weather/:city', weather.today);
+    router.get('/weather/count/:city', weather.count);
 
 };

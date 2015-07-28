@@ -1,17 +1,18 @@
 "use strict";
 
 var config = require('config'),
-    cityCount = require('../mongodb/citycount'),
+    mongoose = require('mongoose'),
+    cityCount = mongoose.model('cityCount'),
     request = require('request'),
     logger = require('winston'),
-    debug = require('debug')('weather'),
+    debug = require('debug')('weather:log'),
     error = require('debug')('weather:error'),
     base = config.get('api.url');
 
 /* GET weather listing. */
 
 exports.today = function (req, res, next) {
-    var params = req.query;
+    var params = req.params;
 
     if (!params.city) {
         next(new Error('missing param city'));
@@ -77,7 +78,7 @@ exports.today = function (req, res, next) {
 
 
 exports.count = function (req, res, next) {
-    var params = req.query,
+    var params = req.params,
         query;
 
     if (!params.city) {
