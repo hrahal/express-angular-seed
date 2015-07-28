@@ -1,28 +1,20 @@
 "use strict";
 
 var config = require('config'),
-    mongoose = require('mongoose'),
-    mode = require('../mongoDB/schema'),
-    cityCount = mongoose.model('cityCount'),
+    cityCount = require('../mongodb/citycount'),
     request = require('request'),
     logger = require('winston'),
     debug = require('debug')('weather'),
+    error = require('debug')('weather:error'),
     base = config.get('api.url');
 
 /* GET weather listing. */
-var trace = function (err) {
-    debug(err);
-    logger.err(err);
-};
 
 exports.today = function (req, res, next) {
     var params = req.query;
 
     if (!params.city) {
-        trace("missing city param");
-        res.send({
-            err: "missing city param"
-        });
+        next(new Error('missing param city'));
     } else {
         request({
 
@@ -35,40 +27,81 @@ exports.today = function (req, res, next) {
 
             if (err) {
 
-                trace(err);
-                res.send(err);
+                error(err);
+                next(err);
 
             } else if (response.statusCode !== 200) {
 
-                trace(err);
-                res.send(body);
+                debug(err);
+                next(body);
 
             } else {
 
                 var data = JSON.parse(body),
-                    conditions = {
+                    query,
+                    update,
+                    options;
+
+                if (data.cod === '404') {
+                    next(new Error('city not found'));
+                } else {
+
+                    query = {
                         city: params.city
-                    },
+                    };
                     update = {
                         $inc: {
                             count: 1
                         }
-                    },
+                    };
                     options = {
                         upsert : true
                     };
 
-                cityCount.update(conditions, update, options, function (err, doc) {
+                    cityCount.update(query, update, options, function (err) {
 
-                    if (err) {
-                        trace(err);
-                    }
+                        if (err) {
+                            error(err);
+                        }
 
-                    debug(doc);
-                    res.send({
-                        success: true,
-                        data: data
+                        res.send({
+                            success: true,
+                            data: data
+                        });
                     });
+                }
+            }
+        });
+    }
+};
+
+
+exports.count = function (req, res, next) {
+    var params = req.query,
+        query;
+
+    if (!params.city) {
+        next(new Error('missing param city'));
+    } else {
+        query = {
+            city : params.city
+        };
+        cityCount.findOne(query, function (err, data) {
+
+            if (err) {
+                error(err);
+            } else if (!data) {
+                next(new Error('city not availabe'));
+            } else {
+
+                var doc = {
+                    city: data.city,
+                    count: data.count
+                };
+
+                res.send({
+                    success: true,
+                    data: doc
                 });
             }
         });

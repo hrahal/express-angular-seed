@@ -44,9 +44,9 @@ if (config.mongodb.logging.enabled) {
 if (app.get('env') === 'development') {
     app.use(function (err, req, res, next) {
         res.status(err.status || 500);
-        res.render('error', {
+        res.send({
             message: err.message,
-            error: err
+            success: false
         });
     });
 }
@@ -55,9 +55,9 @@ if (app.get('env') === 'development') {
 // no stacktraces leaked to user
 app.use(function (err, req, res, next) {
     res.status(err.status || 500);
-    res.render('error', {
+    res.send({
         message: err.message,
-        error: {}
+        success: false
     });
 });
 
