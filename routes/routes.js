@@ -6,6 +6,5 @@ module.exports = function (router) {
 
     //stick to rest api conventions
     router.get('/weather/:city', weather.today);
-    router.get('/weather/count/:city', weather.count);
 
 };
